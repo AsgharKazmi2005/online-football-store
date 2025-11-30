@@ -7,6 +7,12 @@ public class User {
     private String address;
     private String role;
 
+    private boolean mustChangePassword;
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean b) { mustChangePassword = b; }
+
+
     // Getters and setters
     public int getUserId() { return userId; }
     public void setUserId(int userId) { this.userId = userId; }
