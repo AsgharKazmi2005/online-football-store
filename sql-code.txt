@@ -1,0 +1,113 @@
+-- Create database and use it
+CREATE DATABASE IF NOT EXISTS online_store;
+USE online_store;
+
+-- USERS TABLE
+CREATE TABLE IF NOT EXISTS users (
+    user_id     INT AUTO_INCREMENT PRIMARY KEY,
+    username    VARCHAR(50) NOT NULL UNIQUE,
+    password    VARCHAR(255) NOT NULL,
+    full_name   VARCHAR(100) NOT NULL,
+    address     VARCHAR(255),
+    role        ENUM('CUSTOMER','EMPLOYEE','ADMIN') NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed  initial Admin account
+INSERT INTO users (username, password, full_name, address, role)
+VALUES ('denis', 'denis', 'Main Admin', NULL, 'ADMIN');
+
+INSERT INTO users (username, password, full_name, address, role)
+VALUES ('asghar', 'asghar', 'Employee', NULL, 'EMPLOYEE');
+-- PRODUCTS TABLE
+CREATE TABLE IF NOT EXISTS products (
+    product_id      INT AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(100) NOT NULL,
+    description     TEXT,
+    price           DECIMAL(10,2) NOT NULL,
+    stock_quantity  INT NOT NULL DEFAULT 0,
+    active          TINYINT(1) NOT NULL DEFAULT 1
+);
+
+-- COUPONS TABLE
+CREATE TABLE IF NOT EXISTS coupons (
+    coupon_id       INT AUTO_INCREMENT PRIMARY KEY,
+    code            VARCHAR(50) NOT NULL UNIQUE,
+    description     VARCHAR(255),
+    discount_type   ENUM('PERCENT','FIXED') NOT NULL,   -- PERCENT = 10%, FIXED = $10 off
+    discount_value  DECIMAL(10,2) NOT NULL,
+    valid_from      DATE,
+    valid_to        DATE,
+    active          TINYINT(1) NOT NULL DEFAULT 1
+);
+
+-- ORDERS TABLE
+CREATE TABLE IF NOT EXISTS orders (
+    order_id    INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    coupon_id   INT NULL,
+    status      ENUM('PENDING','PROCESSING','SHIPPED','CANCELLED')
+                    NOT NULL DEFAULT 'PENDING',
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                     ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_orders_customer
+        FOREIGN KEY (customer_id) REFERENCES users(user_id),
+    CONSTRAINT fk_orders_coupon
+        FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id)
+);
+
+-- ORDER ITEMS TABLE
+CREATE TABLE IF NOT EXISTS order_items (
+    order_item_id   INT AUTO_INCREMENT PRIMARY KEY,
+    order_id        INT NOT NULL,
+    product_id      INT NOT NULL,
+    quantity        INT NOT NULL,
+    unit_price      DECIMAL(10,2) NOT NULL,
+    line_total      DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_items_order
+        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_items_product
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+-- New customer sign-up
+INSERT INTO users (username, password, full_name, address, role)
+VALUES ('eddie', 'eddie', 'Eddie', '123 Main St', 'CUSTOMER');
+
+
+
+-- Employee creates a coupon code
+INSERT INTO coupons (code, description, discount_type, discount_value, valid_from, valid_to)
+VALUES ('WELCOME10', '10% off for new customers', 'PERCENT', 10.00, '2025-01-01', '2025-12-31');
+
+-- Customer places order (you compute total_amount and apply coupon in Java)
+INSERT INTO orders (customer_id, coupon_id, status, total_amount)
+VALUES (2, NULL, 'PENDING', 159.98);
+
+-- Employee sees list of all customer accounts
+SELECT user_id, username, full_name, address
+FROM users
+WHERE role = 'CUSTOMER'
+ORDER BY full_name;
+
+-- Employee sees list of all orders (sorted by customer name)
+SELECT o.order_id, u.full_name AS customer_name, o.status, o.total_amount, o.created_at
+FROM orders o
+JOIN users u ON o.customer_id = u.user_id
+ORDER BY u.full_name;
+
+-- Customer views their own orders
+SELECT order_id, status, total_amount, created_at
+FROM orders
+WHERE customer_id = 2
+ORDER BY created_at DESC;
+
+ALTER TABLE products
+ADD COLUMN image_path VARCHAR(255) DEFAULT NULL;
+ALTER TABLE users
+ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0;
+
+
+select * from users
