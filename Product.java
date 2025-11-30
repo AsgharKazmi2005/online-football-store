@@ -6,11 +6,15 @@ public class Product {
     private double price;
     private int stockQuantity;
     private boolean active;
+    private String imagePath;
+
 
     public int getProductId() { return productId; }
     public void setProductId(int productId) { this.productId = productId; }
 
     public String getName() { return name; }
+    public String getImagePath() { return imagePath; }
+
     public void setName(String name) { this.name = name; }
 
     public String getDescription() { return description; }
@@ -24,4 +28,5 @@ public class Product {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 }

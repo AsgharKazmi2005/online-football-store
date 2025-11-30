@@ -1,6 +1,7 @@
 // CouponDAO.java
 import java.sql.*;
-
+import java.util.ArrayList;
+import java.util.List;
 public class CouponDAO {
 
     public boolean createCoupon(Coupon c) {
@@ -48,5 +49,29 @@ public class CouponDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public List<Coupon> listAllCoupons() {
+        List<Coupon> list = new ArrayList<>();
+        String sql = "SELECT * FROM coupons ORDER BY coupon_id DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Coupon c = new Coupon();
+                c.setCouponId(rs.getInt("coupon_id"));
+                c.setCode(rs.getString("code"));
+                c.setDiscountType(rs.getString("discount_type"));
+                c.setDiscountValue(rs.getDouble("discount_value"));
+                c.setDescription(rs.getString("description"));
+                list.add(c);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
