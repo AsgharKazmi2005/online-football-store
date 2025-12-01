@@ -84,6 +84,7 @@ public class StoreAppSwing extends JFrame {
                 break;
             case "ADMIN":
                 adminPanel.setLoggedInUser(user);
+                adminPanel.refreshAdminOrders();
                 cardLayout.show(mainPanel, "ADMIN");
                 break;
             default:
