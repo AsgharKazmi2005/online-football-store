@@ -129,18 +129,47 @@ public class UserDAO {
     }
 
     public boolean deleteUser(int userId) {
-        String sql = "DELETE FROM users WHERE user_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection()) {
 
-            stmt.setInt(1, userId);
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
+            conn.setAutoCommit(false);
+
+            // First delete related order items via order_ids from orders
+            String deleteOrderItems =
+                    "DELETE FROM order_items WHERE order_id IN (SELECT order_id FROM orders WHERE customer_id = ?)";
+
+            try (PreparedStatement stmt = conn.prepareStatement(deleteOrderItems)) {
+                stmt.setInt(1, userId);
+                stmt.executeUpdate();
+            }
+
+            // Then delete orders tied to this user
+            String deleteOrders =
+                    "DELETE FROM orders WHERE customer_id = ?";
+
+            try (PreparedStatement stmt = conn.prepareStatement(deleteOrders)) {
+                stmt.setInt(1, userId);
+                stmt.executeUpdate();
+            }
+
+            // Finally delete the user
+            String deleteUser =
+                    "DELETE FROM users WHERE user_id = ?";
+
+            try (PreparedStatement stmt = conn.prepareStatement(deleteUser)) {
+                stmt.setInt(1, userId);
+                int affected = stmt.executeUpdate();
+
+                conn.commit();
+                return affected > 0;
+            }
+
+        } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
+
+
 
     private User mapRowToUser(ResultSet rs) throws SQLException {
         User u = new User();
